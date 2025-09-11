@@ -1,9 +1,14 @@
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
+
+user = get_user_model()
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -16,42 +21,51 @@ class RegistrationView(APIView):
             saved_account = serializer.save()
             data = {
                 'username': saved_account.username,
+                'password': saved_account.password,
                 'email': saved_account.email,
-                'user_id': saved_account.pk
             }
-            return Response(data)
+            return Response({"detail": "User created successfully!"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-class HelloWorldView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response({'message': 'Hello World'})
     
 class CookieTokenObtainView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        refresh = response.data.get("refresh")
-        access = response.data.get("access")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        response.set_cookie(
-            key="access_token",
-            value=access,
-            httponly=True,
-            secure=True,
-            samesite="Lax"
-        )
+        user = serializer.user
+        tokens = serializer.validated_data
 
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh,
-            httponly=True,
-            secure=True,
-            samesite="Lax"
-        )
+        access = tokens.get("access")
+        refresh = tokens.get("refresh")
 
-        response.data = { 'message': 'Login successfully!'}
+        response = Response({
+            "detail": "Login successfully!",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            }
+        })
+
+        if access and refresh:
+            response.set_cookie(
+                key="access_token",
+                value=str(access),
+                httponly=True,
+                secure=True,
+                samesite="Lax"
+            )
+
+            response.set_cookie(
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                secure=True,
+                samesite="Lax"
+            )
+
         return response
     
 class CookieRefreshView(TokenRefreshView):
@@ -76,12 +90,12 @@ class CookieRefreshView(TokenRefreshView):
         
         access_token = serializer.validated_data.get("access")
 
-        response = Response({"message": "Access Token refreshed"})
+        response = Response({"detail": "Token refreshed", "access": "new_access_token"})
         response.set_cookie(
             key="access_token",
-            value=access,
+            value=str(access_token),
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="Lax"
         )
 
@@ -115,5 +129,27 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             secure=True,
             samesite="Lax"
         )
+
+        return response
+    
+class TokenBlacklistView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token is None:
+            response = Response({"detail": "No refresh token cookie provided."}, status=status.HTTP_200_OK)
+        else:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except TokenError as e:
+                return Response({"detail": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
+
+            response = Response({"detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."}, status=status.HTTP_200_OK)
+
+
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
 
         return response
