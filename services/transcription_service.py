@@ -1,3 +1,7 @@
-import youtube_service
+import whisper
 
-audio = youtube_service.download_audio('https://www.youtube.com/watch?v=NFLOobHCs20')
+def transcribe_audio(audio_file):
+    model = whisper.load_model("turbo")
+    result = model.transcribe(audio_file)
+    print(result["text"])
+    return result["text"]
