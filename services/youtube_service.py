@@ -6,7 +6,7 @@ def download_audio(url):
     temp_dir = tempfile.mkdtemp()
 
     ydl_opts = {
-        'format': 'm4a/bestaudio/best',
+        "format": "bestaudio[abr<=128]/bestaudio",
         'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
