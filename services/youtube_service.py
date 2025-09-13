@@ -1,25 +1,18 @@
 import yt_dlp
-import tempfile
 import os
 
-def download_audio(url):
-    temp_dir = tempfile.mkdtemp()
+def download_audio(url, filename: str = "audiofile.mp3") -> str:
 
     ydl_opts = {
-        "format": "bestaudio[abr<=128]/bestaudio",
-        'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',
-        }]
+        "format": "bestaudio/best",
+        "outtmpl": filename,
+        "quiet": True,
+        "noplaylist": True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        error_code = ydl.download([url])
-
-    downloaded_files = os.listdir(temp_dir)
-    print(downloaded_files)
-    if downloaded_files:
-        return os.path.join(temp_dir, downloaded_files[0])
-    else:
-        return None
+        info = ydl.extract_info(url, download=False)
+        output_path = ydl.prepare_filename(info)
+        base, ext = os.path.splitext(output_path)
+        final_path = base + ".mp3"
+        return os.path.abspath(final_path)
