@@ -16,10 +16,6 @@ def download_audio(url) -> str:
             "key": "FFmpegExtractAudio",
             "preferredcodec": "m4a",
         }],
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "m4a",
-        }],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
