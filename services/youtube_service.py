@@ -1,15 +1,11 @@
 import yt_dlp
 import os
 
-import yt_dlp
-import os
-
 def download_audio(url) -> str:
     ydl_opts = {
         "format": "m4a/bestaudio/best",
         "outtmpl": "audio.%(ext)s",
         "format": "m4a/bestaudio/best",
-        "outtmpl": "audio.%(ext)s",
         "quiet": True,
         "noplaylist": True,
         "postprocessors": [{
