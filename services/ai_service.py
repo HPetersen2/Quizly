@@ -3,7 +3,7 @@ from google import genai
 quiz_prompt = """
     {
     "title": "Create a concise quiz title based on the topic of the transcript.",
-    "description": "Summarize the transcript in no more than 150 characters. Do not include any quiz questions or answers.",
+    "description": "Summarize the transcript in no more than 150 characters. Do not include any quiz questions or answers. Use not ```json at start or end.",
     "questions": [
         {
         "question_title": "The question goes here.",
@@ -67,4 +67,4 @@ def generate_quiz(transcript):
         model="gemini-2.5-flash", contents=quiz_prompt + transcript
     )
 
-    print(response.text)
+    return(response.text)
