@@ -6,10 +6,11 @@ from .ai_service import generate_quiz
 
 
 def create_quiz_from_video(video_url: str):
+    if os.path.exists('./media/audiofile.m4a'):
+        os.remove('./media/audiofile.m4a')
     audio_file = download_audio(video_url)
     transcript = transcribe_audio(audio_file)
     quiz = generate_quiz(transcript)
-    print(quiz)
     data = json.loads(quiz)
-    print(type(data))
+    os.remove('./media/audiofile.m4a')
     return data
