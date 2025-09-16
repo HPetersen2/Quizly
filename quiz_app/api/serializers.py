@@ -11,9 +11,9 @@ class QuestionGetSerializer(serializers.ModelSerializer):
         model = Question
         fields = ['id', 'question_title', 'question_options', 'answer']
 
-class QuizGetSerializer(serializers.ModelSerializer):
-    questions = QuestionGetSerializer(many=True)
-    video_url = serializers.CharField()
+class QuizGetPatchSerializer(serializers.ModelSerializer):
+    questions = QuestionGetSerializer(many=True, read_only=True)
+    video_url = serializers.CharField(read_only=True)
 
     class Meta:
         model = Quiz
