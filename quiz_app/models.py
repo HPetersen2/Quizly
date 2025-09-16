@@ -1,9 +1,12 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class Question(models.Model):
     question_title = models.CharField(max_length=200)
     question_options = models.JSONField()
-    answer = models.CharField(max_length=50)
+    answer = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -17,6 +20,7 @@ class Quiz(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     video_url = models.URLField(max_length=200)
     questions = models.ManyToManyField(Question)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quizzes')
 
     def __str__(self):
         return f"Quiz: {self.title} ({self.questions.count()} Fragen)"
