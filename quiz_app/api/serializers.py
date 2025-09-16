@@ -1,22 +1,41 @@
 from rest_framework import serializers
 from quiz_app.models import Quiz, Question
 
-class QuestionSerializer(serializers.ModelSerializer):
+class QuestionPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'question_title', 'question_options', 'anser', 'created_at', 'updated_at']
+        fields = ['id', 'question_title', 'question_options', 'answer', 'created_at', 'updated_at']
 
-class CreateQuizSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True)
+class QuestionGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ['id', 'question_title', 'question_options', 'answer']
+
+class QuizGetSerializer(serializers.ModelSerializer):
+    questions = QuestionGetSerializer(many=True)
+    video_url = serializers.CharField()
 
     class Meta:
         model = Quiz
         fields = ['id', 'title', 'description', 'created_at', 'updated_at', 'video_url', 'questions']
 
-    def create(self, validated_data):
+
+class CreateQuizPostSerializer(serializers.ModelSerializer):
+    questions = QuestionPostSerializer(many=True)
+    video_url = serializers.CharField()
+
+    class Meta:
+        model = Quiz
+        fields = ['id', 'title', 'description', 'created_at', 'updated_at', 'video_url', 'questions']
+
+    def create(self, validated_data):        
+        user = self.context['request'].user
         questions_data = validated_data.pop('questions')
+        
         quiz = Quiz.objects.create(**validated_data)
+
         for question_data in questions_data:
             question = Question.objects.create(**question_data)
             quiz.questions.add(question)
+            
         return quiz
