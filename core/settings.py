@@ -140,3 +140,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ydl_opts = {
+    "format": "m4a/bestaudio/best",
+    "outtmpl": "./media/audiofile.%(ext)s",
+    "quiet": True,
+    "noplaylist": True,
+    "postprocessors": [{
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": "m4a",
+    }],
+}
