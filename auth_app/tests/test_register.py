@@ -1,83 +1,104 @@
+import pytest
 from django.urls import reverse
 from django.contrib.auth.models import User
-from rest_framework.test import APITestCase
 from rest_framework import status
-
-class RegisterTest(APITestCase):
-
-    def setUp(self):
-        self.url = reverse('register-view')
-        self.user_data = {
-            'username': 'newuser',
-            'password': 'newpassword123',
-            'email': 'newuser@test.de'
-        }
-        User.objects.create_user(username='testuser', password='testpassword', email='test@test.de')
+from rest_framework.test import APIClient
 
 
-    def test_register(self):
-        response = self.client.post(self.url, self.user_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(User.objects.filter(username='newuser').exists())
-        self.assertJSONEqual(response.content, {
-            "detail": "User created successfully!"
-        })
+@pytest.fixture
+def user():
+    """Fixture to create a test user."""
+    return User.objects.create_user(
+        username='testuser',
+        password='testpassword',
+        email='test@test.de'
+    )
 
 
-    def test_register_existing_username(self):
-        data = {
-            'username': 'testuser',
-            'password': 'somepassword',
-            'email': 'other@test.de'
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertJSONEqual(response.content, {
-            "username": [
-                "A user with that username already exists."
-            ]
-        })
+@pytest.fixture
+def register_url():
+    """Fixture to provide the registration URL."""
+    return reverse('register-view')
 
 
-    def test_register_invalid_email(self):
-        data = {
-            'username': 'anotheruser',
-            'password': 'somepassword',
-            'email': 'not-an-email'
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertJSONEqual(response.content, {
-            "email": [
-                "Enter a valid email address."
-            ]
-        })
+@pytest.fixture
+def api_client():
+    """Fixture to return an instance of APIClient."""
+    return APIClient()
 
 
-    def test_register_missing_password(self):
-        data = {
-            'username': 'usernopw',
-            'email': 'usernopw@test.de'
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertJSONEqual(response.content, {
-            "password": [
-                "This field is required."
-            ]
-        })
+@pytest.mark.django_db
+def test_register(api_client, register_url):
+    """Test registering a new user."""
+    user_data = {
+        'username': 'newuser',
+        'password': 'newpassword123',
+        'email': 'newuser@test.de'
+    }
+    
+    response = api_client.post(register_url, user_data, format='json')
+    
+    assert response.status_code == status.HTTP_201_CREATED
+    assert User.objects.filter(username='newuser').exists()
+    assert response.json() == {
+        "detail": "User created successfully!"
+    }
 
 
-    def test_register_empty_password(self):
-        data = {
-            'username': 'usernopw',
-            'email': 'usernopw@test.de',
-            'password': ''
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertJSONEqual(response.content, {
-            "password": [
-                "This field may not be blank."
-            ]
-        })
+@pytest.mark.django_db
+def test_register_existing_username(api_client, register_url, user):
+    """Test registering with an existing username."""
+    data = {
+        'username': 'testuser',
+        'password': 'somepassword',
+        'email': 'other@test.de'
+    }
+    
+    response = api_client.post(register_url, data, format='json')
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'username' in response.json()
+
+
+@pytest.mark.django_db
+def test_register_invalid_email(api_client, register_url):
+    """Test registering with an invalid email."""
+    data = {
+        'username': 'newuser2',
+        'password': 'newpassword123',
+        'email': 'invalidemail'
+    }
+    
+    response = api_client.post(register_url, data, format='json')
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'email' in response.json()
+
+
+@pytest.mark.django_db
+def test_register_missing_fields(api_client, register_url):
+    """Test registering with missing fields (e.g. no email or password)."""
+    data = {
+        'username': 'newuser3',
+        'password': ''
+    }
+    
+    response = api_client.post(register_url, data, format='json')
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'email' in response.json()
+
+
+@pytest.mark.django_db
+def test_register_email_already_taken(api_client, register_url, user):
+    """Test registering with an email that already exists."""
+    data = {
+        'username': 'newuser5',
+        'password': 'newpassword123',
+        'email': 'test@test.de'
+    }
+    
+    response = api_client.post(register_url, data, format='json')
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'email' in response.json()

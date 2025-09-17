@@ -106,3 +106,14 @@ def test_login_missing_username(client, create_user, login_url, user_data):
     assert response.json() == {
         'username': ['This field may not be blank.']
     }
+
+
+@pytest.mark.django_db
+def test_login_empty_request(client, login_url):
+    """Test an empty request body."""
+    response = client.post(login_url, {}, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {
+        'username': ['This field is required.'],
+        'password': ['This field is required.']
+    }

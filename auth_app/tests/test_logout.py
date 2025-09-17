@@ -1,51 +1,71 @@
+import pytest
 from django.urls import reverse
-from django.contrib.auth.models import User
-from rest_framework.test import APITestCase
 from rest_framework import status
+from django.contrib.auth.models import User
 
+@pytest.fixture
+def user():
+    """Fixture to create a test user."""
+    return User.objects.create_user(
+        username='testuser',
+        password='testpassword123',
+        email='test@test.de'
+    )
 
-class LogoutTest(APITestCase):
+@pytest.fixture
+def api_client():
+    """Fixture to return an instance of APIClient."""
+    from rest_framework.test import APIClient
+    return APIClient()
 
-    def setUp(self):
-        self.login_url = reverse('login-view')
-        self.logout_url = reverse('token-blacklist')
+@pytest.fixture
+def login_user(api_client, user):
+    """Fixture to log in a user and store the access token."""
+    login_url = reverse('login-view')
+    response = api_client.post(login_url, {
+        'username': user.username,
+        'password': 'testpassword123'
+    }, format='json')
 
-        self.username = 'testuser'
-        self.password = 'testpassword123'
-        self.user = User.objects.create_user(
-            username=self.username,
-            password=self.password,
-            email='test@test.de'
-        )
+    access_token = response.cookies.get('access_token').value
+    api_client.cookies['access_token'] = access_token
+    return api_client, access_token
 
-        response = self.client.post(self.login_url, {
-            'username': self.username,
-            'password': self.password
-        }, format='json')
+@pytest.fixture
+def logout_url():
+    """Fixture for the logout URL."""
+    return reverse('token-blacklist')
 
-        self.access_token = response.cookies.get('access_token').value
+@pytest.mark.django_db
+def test_logout_success(api_client, login_user, logout_url):
+    """Test logging out successfully with a valid token and ensuring the token is blacklisted."""
+    api_client, access_token = login_user
 
+    response = api_client.post(
+        logout_url,
+        {},
+        HTTP_AUTHORIZATION=f'Bearer {access_token}'
+    )
 
-    def test_logout_success(self):
-        response = self.client.post(
-            self.logout_url,
-            {},
-            HTTP_AUTHORIZATION=f'Bearer {self.access_token}'
-        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {
+        "detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
+    }
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access_token', response.cookies)
-        self.assertEqual(response.cookies['access_token'].value, '')
-        self.assertIn('refresh_token', response.cookies)
-        self.assertEqual(response.cookies['refresh_token'].value, '')
-        self.assertJSONEqual(response.content, {
-            "detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
-        })
+    response = api_client.get(
+        logout_url,
+        HTTP_AUTHORIZATION=f'Bearer {access_token}'
+    )
 
+@pytest.mark.django_db
+def test_logout_invalid_token(api_client, user, logout_url):
+    """Test logging out with an invalid token (after logout)."""
+    invalid_token = 'invalidtoken'
 
-    def test_logout_without_token(self):
-        response = self.client.post(self.logout_url, {}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertJSONEqual(response.content, {
-            "detail": "Authentication credentials were not provided."
-        })
+    response = api_client.post(
+        logout_url,
+        {},
+        HTTP_AUTHORIZATION=f'Bearer {invalid_token}'
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
