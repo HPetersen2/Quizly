@@ -28,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
+    'api.quizly.henrik-petersen.de',
 ]
 
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500',
     'http://127.0.0.1:3000',
+    'https://api.quizly.henrik-petersen.de',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
