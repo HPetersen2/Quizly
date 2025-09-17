@@ -1,91 +1,108 @@
-from django.urls import reverse
+import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APITestCase
+from django.urls import reverse
 from rest_framework import status
 
-class RegisterTest(APITestCase):
-
-    def setUp(self):
-        self.url = reverse('login-view')
-        self.username = 'newuser'
-        self.password = 'newpassword123'
-        self.user = User.objects.create_user(
-            username=self.username,
-            password=self.password,
+@pytest.fixture
+def create_user(db):
+    def make_user(username='newuser', password='newpassword123'):
+        return User.objects.create_user(
+            username=username,
+            password=password,
             email='newuser@test.de'
         )
-        self.user_data = {
-            'username': self.username,
-            'password': self.password
+    return make_user
+
+
+@pytest.fixture
+def login_url():
+    return reverse('login-view')
+
+
+@pytest.fixture
+def user_data():
+    return {
+        'username': 'newuser',
+        'password': 'newpassword123',
+    }
+
+
+@pytest.mark.django_db
+def test_login(client, create_user, login_url, user_data):
+    user = create_user()
+    response = client.post(login_url, user_data, format='json')
+    assert response.status_code == status.HTTP_200_OK
+    assert 'access_token' in response.cookies
+    assert 'refresh_token' in response.cookies
+    assert response.json() == {
+        "detail": "Login successfully!",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
         }
+    }
 
 
-    def test_login(self):
-        response = self.client.post(self.url, self.user_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access_token', response.cookies)
-        self.assertIn('refresh_token', response.cookies)
-        self.assertJSONEqual(response.content, {
-            "detail": "Login successfully!",
-            "user": {
-                "id": self.user.id,
-                "username": self.username,
-                "email": self.user.email
-            }
-        })
+@pytest.mark.django_db
+def test_login_false_username(client, create_user, login_url, user_data):
+    create_user()
+    data = {
+        'username': 'michwirdesniegeben',
+        'password': user_data['password']
+    }
+    response = client.post(login_url, data, format='json')
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'access_token' not in response.cookies
+    assert 'refresh_token' not in response.cookies
+    assert response.json() == {
+        "detail": "No active account found with the given credentials"
+    }
 
 
-    def test_login_false_username(self):
-        data = {
-            'username': 'michwirdesniegeben',
-            'password': self.password,
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertNotIn('access_token', response.cookies)
-        self.assertNotIn('refresh_token', response.cookies)
-        self.assertJSONEqual(response.content, {
-            "detail": "No active account found with the given credentials"
-        })
+@pytest.mark.django_db
+def test_login_false_password(client, create_user, login_url, user_data):
+    create_user()
+    data = {
+        'username': user_data['username'],
+        'password': 'somepassword'
+    }
+    response = client.post(login_url, data, format='json')
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'access_token' not in response.cookies
+    assert 'refresh_token' not in response.cookies
+    assert response.json() == {
+        "detail": "No active account found with the given credentials"
+    }
 
 
-    def test_login_false_password(self):
-        data = {
-            'username': self.username,
-            'password': 'somepassword'
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertNotIn('access_token', response.cookies)
-        self.assertNotIn('refresh_token', response.cookies)
-        self.assertJSONEqual(response.content, {
-            "detail": "No active account found with the given credentials"
-        })
+@pytest.mark.django_db
+def test_login_missing_password(client, create_user, login_url, user_data):
+    create_user()
+    data = {
+        'username': user_data['username'],
+        'password': ''
+    }
+    response = client.post(login_url, data, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'access_token' not in response.cookies
+    assert 'refresh_token' not in response.cookies
+    assert response.json() == {
+        'password': ['This field may not be blank.']
+    }
 
 
-    def test_login_missing_password(self):
-        data = {
-            'username': self.username,
-            'password': ''
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertNotIn('access_token', response.cookies)
-        self.assertNotIn('refresh_token', response.cookies)
-        self.assertJSONEqual(response.content, {
-            'password': ['This field may not be blank.']
-        })
-
-    
-    def test_login_missing_username(self):
-        data = {
-            'username': '',
-            'password': self.password
-        }
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertNotIn('access_token', response.cookies)
-        self.assertNotIn('refresh_token', response.cookies)
-        self.assertJSONEqual(response.content, {
-            'username': ['This field may not be blank.']
-        })
+@pytest.mark.django_db
+def test_login_missing_username(client, create_user, login_url, user_data):
+    create_user()
+    data = {
+        'username': '',
+        'password': user_data['password']
+    }
+    response = client.post(login_url, data, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'access_token' not in response.cookies
+    assert 'refresh_token' not in response.cookies
+    assert response.json() == {
+        'username': ['This field may not be blank.']
+    }
