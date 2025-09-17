@@ -47,7 +47,6 @@ def test_get_quizzes(api_client, login_user, quiz_urls):
     response = api_client.get(quiz_urls['quiz_list'])
     
     assert response.status_code == status.HTTP_200_OK
-    
     assert isinstance(response.data, list)
 
 @pytest.mark.django_db

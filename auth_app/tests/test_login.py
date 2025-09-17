@@ -5,6 +5,7 @@ from rest_framework import status
 
 @pytest.fixture
 def create_user(db):
+    """Fixture to create a user with default or custom username and password."""
     def make_user(username='newuser', password='newpassword123'):
         return User.objects.create_user(
             username=username,
@@ -16,11 +17,13 @@ def create_user(db):
 
 @pytest.fixture
 def login_url():
+    """Fixture for the login URL."""
     return reverse('login-view')
 
 
 @pytest.fixture
 def user_data():
+    """Fixture for the user login data."""
     return {
         'username': 'newuser',
         'password': 'newpassword123',
@@ -29,6 +32,7 @@ def user_data():
 
 @pytest.mark.django_db
 def test_login(client, create_user, login_url, user_data):
+    """Test successful login with correct credentials."""
     user = create_user()
     response = client.post(login_url, user_data, format='json')
     assert response.status_code == status.HTTP_200_OK
@@ -46,6 +50,7 @@ def test_login(client, create_user, login_url, user_data):
 
 @pytest.mark.django_db
 def test_login_false_username(client, create_user, login_url, user_data):
+    """Test login attempt with an incorrect username."""
     create_user()
     data = {
         'username': 'michwirdesniegeben',
@@ -62,6 +67,7 @@ def test_login_false_username(client, create_user, login_url, user_data):
 
 @pytest.mark.django_db
 def test_login_false_password(client, create_user, login_url, user_data):
+    """Test login attempt with an incorrect password."""
     create_user()
     data = {
         'username': user_data['username'],
@@ -78,6 +84,7 @@ def test_login_false_password(client, create_user, login_url, user_data):
 
 @pytest.mark.django_db
 def test_login_missing_password(client, create_user, login_url, user_data):
+    """Test login attempt with a missing password."""
     create_user()
     data = {
         'username': user_data['username'],
@@ -94,6 +101,7 @@ def test_login_missing_password(client, create_user, login_url, user_data):
 
 @pytest.mark.django_db
 def test_login_missing_username(client, create_user, login_url, user_data):
+    """Test login attempt with a missing username."""
     create_user()
     data = {
         'username': '',

@@ -56,6 +56,7 @@ def test_logout_success(api_client, login_user, logout_url):
         logout_url,
         HTTP_AUTHORIZATION=f'Bearer {access_token}'
     )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 @pytest.mark.django_db
 def test_logout_invalid_token(api_client, user, logout_url):

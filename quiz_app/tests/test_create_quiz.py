@@ -41,23 +41,23 @@ def quiz_url():
     return reverse('create-quiz')
 
 def post_with_retry(api_client, url, data, retries=MAX_RETRIES, delay=RETRY_DELAY):
-    """Hilfsfunktion, die POST-Anfragen mit Retry-Logik ausführt."""
+    """Helper function to perform POST requests with retry logic."""
     for attempt in range(retries):
         try:
             response = api_client.post(url, data, format='json', timeout=30)
             return response
         except Timeout:
             if attempt < retries - 1:
-                print(f"Timeout bei Anfrage, versuche es erneut... (Versuch {attempt + 1} von {retries})")
+                print(f"Timeout on request, retrying... (Attempt {attempt + 1} of {retries})")
                 time.sleep(delay)
             else:
-                pytest.fail("Der Dienst hat nach mehreren Versuchen nicht reagiert.")
+                pytest.fail("The service did not respond after multiple attempts.")
         except RequestException as e:
             if attempt < retries - 1:
-                print(f"Fehler bei der Anfrage: {str(e)}, versuche es erneut... (Versuch {attempt + 1} von {retries})")
+                print(f"Request error: {str(e)}, retrying... (Attempt {attempt + 1} of {retries})")
                 time.sleep(delay)
             else:
-                pytest.fail(f"Die Anfrage konnte nach mehreren Versuchen nicht ausgeführt werden: {str(e)}")
+                pytest.fail(f"Request failed after multiple attempts: {str(e)}")
     return None
 
 @pytest.mark.django_db
@@ -68,7 +68,7 @@ def test_create_quiz(api_client, login_user, quiz_url):
     }
     response = post_with_retry(api_client, quiz_url, data)
     
-    assert response is not None, "Die Anfrage ist fehlgeschlagen."
+    assert response is not None, "The request failed."
     assert response.status_code == status.HTTP_201_CREATED
     
     expected_fields = ['id', 'title', 'description', 'created_at', 'updated_at', 'video_url', 'questions']
@@ -83,7 +83,7 @@ def test_create_quiz_with_invalid_url(api_client, login_user, quiz_url):
     }
     response = post_with_retry(api_client, quiz_url, data)
     
-    assert response is not None, "Die Anfrage ist fehlgeschlagen."
+    assert response is not None, "The request failed."
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.django_db
@@ -95,7 +95,7 @@ def test_create_quiz_without_login(api_client, quiz_url):
     }
     response = post_with_retry(api_client, quiz_url, data)
     
-    assert response is not None, "Die Anfrage ist fehlgeschlagen."
+    assert response is not None, "The request failed."
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 @pytest.mark.django_db
@@ -106,7 +106,7 @@ def test_create_quiz_with_empty_url(api_client, login_user, quiz_url):
     }
     response = post_with_retry(api_client, quiz_url, data)
     
-    assert response is not None, "Die Anfrage ist fehlgeschlagen."
+    assert response is not None, "The request failed."
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "error" in response.data
 
@@ -118,6 +118,6 @@ def test_create_quiz_invalid_url_format(api_client, login_user, quiz_url):
     }
     response = post_with_retry(api_client, quiz_url, data)
     
-    assert response is not None, "Die Anfrage ist fehlgeschlagen."
+    assert response is not None, "The request failed."
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "error" in response.data
