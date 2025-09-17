@@ -5,7 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from yt_dlp.utils import DownloadError
 from quiz_app.models import Quiz
-from .permissions import IsAuthenticatedFromCookie, IsQuizOwner
+from .permissions import IsAuthenticatedFromCookie, CookieJWTAuthentication, IsQuizOwner
 from .serializers import CreateQuizPostSerializer, QuizGetPatchSerializer
 from services.quiz_service import create_quiz_from_video
 
@@ -47,4 +47,5 @@ class QuizListView(generics.ListAPIView):
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizGetPatchSerializer
-    permission_classes = [IsAuthenticatedFromCookie, IsQuizOwner]
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsQuizOwner]
