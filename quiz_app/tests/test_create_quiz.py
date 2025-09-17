@@ -48,13 +48,11 @@ def post_with_retry(api_client, url, data, retries=MAX_RETRIES, delay=RETRY_DELA
             return response
         except Timeout:
             if attempt < retries - 1:
-                print(f"Timeout on request, retrying... (Attempt {attempt + 1} of {retries})")
                 time.sleep(delay)
             else:
                 pytest.fail("The service did not respond after multiple attempts.")
         except RequestException as e:
             if attempt < retries - 1:
-                print(f"Request error: {str(e)}, retrying... (Attempt {attempt + 1} of {retries})")
                 time.sleep(delay)
             else:
                 pytest.fail(f"Request failed after multiple attempts: {str(e)}")

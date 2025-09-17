@@ -14,6 +14,7 @@ class CreateQuizView(generics.CreateAPIView):
     permission_classes = [IsAuthenticatedFromCookie]
 
     def create(self, request, *args, **kwargs):
+        """Create a quiz from a video URL and associated data."""
         url = request.data.get("url")
         if not url:
             return Response(
@@ -42,6 +43,7 @@ class QuizListView(generics.ListAPIView):
     permission_classes = [IsAuthenticatedFromCookie]
 
     def get_queryset(self):
+        """Return a list of quizzes owned by the authenticated user."""
         return Quiz.objects.filter(owner=self.request.user)
     
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -49,3 +51,6 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = QuizGetPatchSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, IsQuizOwner]
+    
+    """Retrieve, update, or delete a quiz, restricted to quiz owner."""
+

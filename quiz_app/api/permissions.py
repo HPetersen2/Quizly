@@ -4,6 +4,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 class IsAuthenticatedFromCookie(BasePermission):
     def has_permission(self, request, view):
+        """Check if user is authenticated from the 'access_token' cookie."""
         jwt_authenticator = JWTAuthentication()
 
         access_token = request.COOKIES.get('access_token')
@@ -22,9 +23,10 @@ class IsAuthenticatedFromCookie(BasePermission):
             return False
         except Exception:
             return False
-        
+
 class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
+        """Authenticate using the 'access_token' from the cookie."""
         access_token = request.COOKIES.get('access_token')
         if not access_token:
             return None
@@ -35,9 +37,6 @@ class CookieJWTAuthentication(JWTAuthentication):
 
 class IsQuizOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            print("Benutzer nicht authentifiziert in has_object_permission")
-        if request.user != obj.owner:
-            print(f"Benutzer {request.user} ist nicht Besitzer von {obj}")
+        """Check if the user is the owner of the quiz object."""
         return request.user == obj.owner
-            
+

@@ -14,6 +14,7 @@ class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Register a new user and create an account."""
         serializer = RegistrationSerializer(data=request.data)
 
         data = {}
@@ -31,6 +32,7 @@ class RegistrationView(APIView):
     
 class CookieTokenObtainView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
+        """Obtain JWT tokens and set them as cookies."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -70,6 +72,7 @@ class CookieTokenObtainView(TokenObtainPairView):
     
 class CookieRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
+        """Refresh the access token using the refresh token stored in cookies."""
         refresh_token = request.COOKIES.get("refresh_token")
 
         if refresh_token is None:
@@ -105,6 +108,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        """Obtain JWT tokens with custom serializer and set them as cookies."""
         serializer = self.get_serializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
@@ -136,6 +140,7 @@ class TokenBlacklistView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        """Blacklist the refresh token and log the user out."""
         refresh_token = request.COOKIES.get('refresh_token')
         if refresh_token is None:
             response = Response({"detail": "No refresh token cookie provided."}, status=status.HTTP_200_OK)
@@ -147,7 +152,6 @@ class TokenBlacklistView(APIView):
                 return Response({"detail": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
 
             response = Response({"detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."}, status=status.HTTP_200_OK)
-
 
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
