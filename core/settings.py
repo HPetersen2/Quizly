@@ -12,19 +12,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+GEMINI_API_KEY = env("GEMINI_API_KEY")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fw-%t@7ssx0b!ga7x*x-m^8k)_u$c_y)a&71k=oo*v%2*i7l6q'
+SECRET_KEY = SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG", default=False)
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
