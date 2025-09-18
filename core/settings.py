@@ -29,6 +29,8 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'api.quizly.henrik-petersen.de',
+    'quizly.henrik-petersen.de',
+    'wwww.quizly.henrik-petersen.de',
 ]
 
 
@@ -53,6 +55,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500',
     'http://127.0.0.1:3000',
     'https://api.quizly.henrik-petersen.de',
+    'https://quizly.henrik-petersen.de',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
