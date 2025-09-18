@@ -3,7 +3,7 @@ import os
 from core.settings import ydl_opts
 
 def download_audio(url) -> str:
-
+    """Function that downloads audio from a given URL using yt-dlp and returns the absolute path to the saved .m4a file."""
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         output_path = ydl.prepare_filename(info)

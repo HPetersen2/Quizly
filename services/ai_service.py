@@ -34,7 +34,7 @@ Here is the transcript:
 
 
 def generate_quiz(transcript):
-    # The client gets the API key from the environment variable `GEMINI_API_KEY`.
+    """Function that generates quiz content from a given transcript using the Gemini 2.5 Flash language model."""
     client = genai.Client()
 
     response = client.models.generate_content(
