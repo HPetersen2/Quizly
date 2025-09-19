@@ -55,6 +55,14 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
+Create a .env file in the project root and add your Gemini API Key:
+
+```bash
+SECRET_KEY=your_django_secret_key_here
+DEBUG=True
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
 Run the database migrations:
 
 ```bash
